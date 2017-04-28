@@ -1,93 +1,98 @@
-// function Lue(options) {
-//     this.$options = options;
-//     this.$el = document.querySelector(options.el);
-//     this.currentNodeList = [];
+class Event {
+    constructor() {
+        this.events = {};
+    }
+    on(e, handler) {
+        if (!this.events.hasOwnProperty(e)) {
+            this.events[e] = [];
+        }
+        this.events[e].push(handler);
+    }
+    off(e) {
+        for (let key in this.events) {
+            if (this.events.hasOwnProperty(key) && key === e) {
+                delete this.events[e];e
+            }
+        }
+    }
+    emit(e, ...args) {
+        if (this.events.hasOwnProperty(e)) {
+            this.events[e].forEach((item) => {
+                item(...args);
+            });
+        }
+    }
+}
 
-//     this.fragment = document.createDocumentFragment();
+class Observer {
+    constructor(data) {
+        this.data = data;
+        this.eventHub = new Event();
+        this._walk(data);
+    }
 
-//     this.currentNodeList.push(this.fragment);
+    _walk(data) {
+        let val;
+        for (let key in data) {
+            if (data.hasOwnProperty(key)) {
+                val = data[key];
+                if (typeof val === 'object') {
+                    new Observer(val);
+                }
+                this._convert(key, val);
+            }
+        }
+    }
 
-//     this.$mount();
+    _convert(key, val) {
+        let that = this;
+        Object.defineProperty(this.data, key, {
+            enumerable: true,
+            configurable: true,
+            get() {
+                return val;
+            }, 
+            set(newval) {
+                console.log(`你设置了新值: ${newval}`);
+                if (val === newval) {
+                    return;
+                }
+                that.eventHub.emit(key, val, newval);
+                val = newval;
+                if (typeof newval === 'object') {
+                    new Observer(val);
+                }
+            }
+        })
+    }
 
-//     this.$el.parentNode.replaceChild(this.fragment, this.$el);
-// }
-
-// Lue.prototype = {
-//     constructor: Lue,
-//     $mount: function () {
-//         this._compile();
-//     },
-//     _compile: function () {
-//         this._compileNode(this.$el);
-//     },
-//     // 根据nodeType处理node节点
-//     _compileNode: function (node) {
-//         var type = node.nodeType;
-//         switch (type) {
-//             case 1:
-//                 this._compileElement(node);
-//                 break;
-//             case 3:
-//                 this._compileText(node);
-//                 break;
-//             default:
-//                 return;
-//         }
-//     },
-//     _compileElement: function (node) {
-//         var that = this;
-//         // 创建新节点
-//         var newNode = document.createElement(node.tagName);
-
-//         if (node.hasAttributes()) {
-//             var attrs = Array.prototype.slice.call(node.attributes, 0);
-//             attrs.forEach(function (attr) {
-//                 newNode.setAttribute(attr.name, attr.value);
-//             });
-//         }
-
-//         // 获取准备替代的节点
-//         var currentNode = this.currentNodeList[this.currentNodeList.length - 1].appendChild(newNode);
-
-//         // 判断节点是否含有子节点
-//         if (node.hasChildNodes) {
-//             this.currentNodeList.push(currentNode);
-//             var childNodes = Array.prototype.slice.call(node.childNodes, 0);
-//             childNodes.forEach(function (child) {
-//                 that._compileNode(child);
-//             })
-//         }
-
-//         this.currentNodeList.pop();
-//     },
-//     _compileText: function (node) {
-
-//         var nodeValue = node.nodeValue;
-
-//         var pattern = /\{\{(.+?)\}\}/g;
-//         var ret = nodeValue.match(pattern);
-//         if (!ret) {
-//             return;
-//         }
-//         ret.forEach(function (value) {
-//             var property = value.replace(/[{}]/g, '');
-//             nodeValue = nodeValue.replace(value, '222');
-//         });
-
-//         this.currentNodeList[this.currentNodeList.length - 1].appendChild(document.createTextNode(nodeValue));
-
-//     }
-// }
+    watch(e, handler) {
+        this.eventHub.on(e, handler);
+    }
+}
 
 class Lue {
     constructor(options) {
+        this._init(options);
+        this.$observer = new Observer(this.$data);
+    }
+    _init(options) {
+        // 初始化元数据
         this.$options = options;
         this.$el = document.querySelector(options.el);
+        this.$data = options.data;
+
+
+        // 创建存储变量
         this.currentNodeList = [];
         this.fragment = document.createDocumentFragment();
         this.currentNodeList.push(this.fragment);
+
+        // 挂载
         this._mount();
+        // 替换原始dom
         this.$el.parentNode.replaceChild(this.fragment, this.$el);
+        // 更新$el元素
         this.$el = document.querySelector(options.el);
     }
     _mount() {
@@ -135,7 +140,6 @@ class Lue {
 
     }
     _compileText(node) {
-
         let nodeValue = node.nodeValue;
 
         let pattern = /\{\{(.+?)\}\}/g;
@@ -145,7 +149,16 @@ class Lue {
         }
         ret.forEach((value) => {
             let property = value.replace(/[{}]/g, '');
-            nodeValue = nodeValue.replace(value, '222');
+            // 深度便利对象属性
+            let pros = property.split('.');
+            let val, curObj;
+            for (let i = 0; i < pros.length; i++) {
+                if (this.$data[pros[i]]) {
+                    curObj = this.$data[pros[i]];
+                }
+                val = curObj[pros[i]];
+            }
+            nodeValue = nodeValue.replace(value, val);
         });
 
         this.currentNodeList[this.currentNodeList.length - 1].appendChild(document.createTextNode(nodeValue));
@@ -154,11 +167,14 @@ class Lue {
 }
 
 
-var app = new Lue({
+let app = new Lue({
     el: '#app',
     data: {
         user: {
-            name: 'lzy'
+            name: 'lzy',
+            age: 21
         }
     }
-})
+});
+
+app.$data.user.age = '232';

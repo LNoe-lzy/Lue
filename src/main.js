@@ -92,7 +92,6 @@ class Observer {
 class Lue {
     constructor(options) {
         this._init(options);
-        this.$observer = new Observer(this.$data);
     }
     _init(options) {
         // 初始化元数据
@@ -105,6 +104,10 @@ class Lue {
         this.currentNodeList = [];
         this.fragment = document.createDocumentFragment();
         this.currentNodeList.push(this.fragment);
+
+        // 事件监听
+        this.$observer = new Observer(this.$data);
+        this.$observer.eventHub.on('set', this._mount.bind(this));
 
         // 挂载
         this._mount();

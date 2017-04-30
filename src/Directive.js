@@ -8,9 +8,21 @@ export default class Directive {
         this.expression = descriptor.expression;
         this.attr = 'nodeValue';
 
+        this._initDef();
+
         this._bind();
 
-        this.update();
+        // this.update();
+    }
+
+    /**
+     * 根据指令调用其对应的update
+     * 
+     * @memberOf Directive
+     */
+    _initDef() {
+        let def = this.vm.$options.directives[this.type];
+        this.update = def.update;
     }
 
     _bind() {
@@ -31,17 +43,5 @@ export default class Directive {
 
     _update() {
         this.update();
-    }
-
-    update() {
-        // 深度遍历expression, 获取所需要的属性值
-        let exps = this.expression.split('.');
-        let val = this.vm.$data;
-        exps.forEach((exp) => {
-            val = val[exp];
-        })
-        this.el[this.attr] = val;
-
-        console.log(`更新了DOM-${this.expression}`, val);
     }
 }

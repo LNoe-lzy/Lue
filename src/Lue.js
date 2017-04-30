@@ -3,6 +3,9 @@ import Observer from './Observer';
 import Directive from './Directive';
 import Binding from './Binding';
 
+// 引入指令库
+import directives from './directives';
+
 export default class Lue {
     constructor(options) {
         this._init(options);
@@ -10,8 +13,12 @@ export default class Lue {
     _init(options) {
         // 初始化元数据
         this.$options = options;
-        this.$el = document.querySelector(options.el);
-        this.$data = options.data;
+        this.$data = options.data || {};
+
+        // 绑定指令到$options
+        Object.assign(this.$options, {
+            directives
+        });
 
         // 事件监听
         this.$observer = new Observer(this.$data);
@@ -22,16 +29,52 @@ export default class Lue {
         this._directives = [];
 
         // 挂载
-        this._mount();
+        this._mount(options.el);
 
         this.$el = document.querySelector(options.el);
     }
-    _mount() {
+    _mount(el) {
+        this._initElement(el)
         this._compile();
     }
+
+    /**
+     * 初始化dom节点，如果不存在抛出警告
+     * 
+     * @param {String} el 
+     * @returns 
+     * 
+     * @memberOf Lue
+     */
+    _initElement(el) {
+        if (typeof el !== 'string') {
+            return;
+        }
+        let sel = el;
+        this.$el = el = document.querySelector(el);
+        if (!el) {
+            console.warn(`can not fount element: ${sel}`);
+        }
+
+    }
+
+    /**
+     * 解析dom
+     * 
+     * @memberOf Lue
+     */
     _compile() {
         this._compileNode(this.$el);
     }
+
+    /**
+     * 根据nodeType调用不同的方法
+     * 
+     * @param {any} node 
+     * @returns 
+     * 
+     * @memberOf Lue
+     */
     _compileNode(node) {
         let nodeType = node.nodeType;
         switch (nodeType) {
@@ -45,16 +88,30 @@ export default class Lue {
                 return;
         }
     }
-    _compileElement(node) {
-        let that = this;
 
+    /**
+     * 渲染普通节点
+     * 
+     * @param {Object} node 
+     * 
+     * @memberOf Lue
+     */
+    _compileElement(node) {
         if (node.hasChildNodes) {
             Array.from(node.childNodes).forEach((child) => {
                 this._compileNode(child);
-            })
+            });
         }
-
     }
+
+    /**
+     * 渲染文本节点
+     * 
+     * @param {any} node 
+     * @returns 
+     * 
+     * @memberOf Lue
+     */
     _compileText(node) {
         let nodeValue = node.nodeValue;
 
@@ -166,6 +223,7 @@ export default class Lue {
         let pathArr = path.split('.');
         let rb = this._rootBinding;
 
+        // 找到最里层对象的subs数组
         pathArr.forEach((key) => {
             rb = rb[key];
         });

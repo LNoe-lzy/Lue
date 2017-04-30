@@ -1,11 +1,11 @@
 import Watcher from './Watcher';
 
 export default class Directive {
-    constructor(type, el, vm, expression) {
+    constructor(type, el, vm, descriptor) {
         this.type = type;
         this.el = el;
         this.vm = vm;
-        this.expression = expression;
+        this.expression = descriptor.expression;
         this.attr = 'nodeValue';
 
         this._bind();
@@ -41,5 +41,7 @@ export default class Directive {
             val = val[exp];
         })
         this.el[this.attr] = val;
+
+        console.log(`更新了DOM-${this.expression}`, val);
     }
 }

@@ -12,4 +12,4 @@ let app = new Lue({
 
 console.log(app);
 
-app.$data.user.age = '22';
+app.$data.user.name = 'lzys';

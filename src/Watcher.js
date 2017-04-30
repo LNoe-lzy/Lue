@@ -20,10 +20,11 @@ export default class Watcher {
         this.expression = expression;
         this.callback = callback;
         this.context = context || vm;
+        this.addDep(expression);
     }
 
     addDep(path) {
-        let binding = this.vm._createBinging(path);
+        let binding = this.vm._createBinding(path);
         binding._addSub(this);
     }
 

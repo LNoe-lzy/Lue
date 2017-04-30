@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <!--<<link rel="stylesheet" type="text/css" href="build/styls.css">-->
+    <script src="build/build.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <p>hello world</p>
+        <p>hello my name is: {{user.name}}</p>
+        <p>{{user.age}}</p>
+    </div>
+
+    <script>
+
+        let app = new Lue({
+            el: '#app',
+            data: {
+                user: {
+                    name: 'lzy',
+                    age: 21
+                }
+            }
+        });
+
+        console.log(app);
+
+        app.$data.user.name = 'lzys';
+    </script>
+<script type="text/javascript" src="build.js"></script></body>
+
+</html>

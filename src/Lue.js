@@ -16,7 +16,6 @@ export default class Lue {
         // 事件监听
         this.$observer = new Observer(this.$data);
 
-
         // 初始化binding
         this._initBinding();
 
@@ -59,34 +58,89 @@ export default class Lue {
     _compileText(node) {
         let nodeValue = node.nodeValue;
 
-        let pattern = /\{\{(.+?)\}\}/g;
-        let ret = nodeValue.match(pattern);
-        if (!ret) {
+        let tokens = this._parse(nodeValue);
+
+        if (!tokens) {
             return;
         }
-        ret.forEach((value) => {
-            let textNode = document.createTextNode('');
-            node.parentNode.insertBefore(textNode, node);
-            let property = value.replace(/[{}]/g, '');
-            // console.log(property);
-            this._bindDirective('text', textNode, property);
+
+        tokens.forEach((token) => {
+            let value = token.value;
+            if (token.tag) {
+                let textNode = document.createTextNode('');
+                node.parentNode.insertBefore(textNode, node);
+                this._bindDirective('text', textNode, value);
+            } else {
+                // 处理普通文本节点
+                let textNode = document.createTextNode(value);
+                node.parentNode.insertBefore(textNode, node);
+            }
         });
+
+        // 替换节点内容之后需要删除原来的文本节点
         node.parentNode.removeChild(node);
 
     }
 
-    _bindDirective(type, el, expression) {
-        // 将指令操作存入_directives数组
-        this._directives.push(
-            new Directive(type, el, this, expression)
-        );
+    /**
+     * 正则匹配节点
+     * 
+     * @param {String} text 
+     * 
+     * @memberOf Lue
+     */
+    _parse(text) {
+        let tokens = [];
+        let pattern = /\{\{(.+?)\}\}/g;
+        let match, index, value;
+        let lastIndex = 0;
+
+        // 处理包含指令的文本节点 
+        while (match = pattern.exec(text)) {
+            index = match.index;
+            // 取得指定以外的文本
+            if (index > lastIndex) {
+                tokens.push({
+                    value: text.slice(lastIndex, index)
+                });
+            }
+            index = match.index;
+            value = match[1];
+            tokens.push({
+                value,
+                tag: true
+            });
+            lastIndex = match[0].length + index;
+        }
+
+        // 处理不含指令的纯文本节点
+        if (lastIndex < text.length - 1) {
+            tokens.push({
+                value: text.slice(lastIndex)
+            });
+        }
+
+        return tokens;
     }
 
-    createBinding(path) {
+    _bindDirective(type, node, value) {
+        let descriptors = [];
+        descriptors.push({
+            expression: value
+        });
+
+        let dirs = this._directives;
+        descriptors.forEach((descriptor) => {
+            dirs.push(
+                new Directive(type, node, this, descriptor)
+            )
+        });
+    }
+
+    _createBinding(path) {
         let rb = this._rootBinding;
         let pathArr = path.split('.');
-
-        for (let i = 0; i < pathArr; i++) {
+        for (let i = 0; i < pathArr.length; i++) {
             let key = pathArr[i];
             rb = rb[key] = rb._addChild(key);
         }
@@ -108,13 +162,14 @@ export default class Lue {
      * @memberOf Lue
      */
     _updateBinding() {
-        let path = arguments[1];
-        console.log(path);
+        let path = arguments[0];
         let pathArr = path.split('.');
         let rb = this._rootBinding;
+
         pathArr.forEach((key) => {
             rb = rb[key];
         });
+
         let subs = rb._subs;
         subs.forEach((watcher) => {
             watcher.callback.call(watcher);

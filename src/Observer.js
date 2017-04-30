@@ -33,7 +33,6 @@ export default class Observer {
                 return val;
             },
             set(newval) {
-                console.log(`你设置了新值: ${newval}`);
                 if (val === newval) {
                     return;
                 }

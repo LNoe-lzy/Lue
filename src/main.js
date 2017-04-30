@@ -10,4 +10,6 @@ let app = new Lue({
     }
 });
 
-app.$data.user.age = '232';
+console.log(app);
+
+app.$data.user.age = '22';

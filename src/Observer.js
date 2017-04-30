@@ -55,9 +55,11 @@ export default class Observer {
         if (!parent) {
             return;
         }
+        let parentKey = parent.key;
+        let parentPath = `${parentKey}.${path}`
         // 递归传播
         let obj = parent.obj;
-        obj._notify(e, path, val);
+        obj._notify(e, parentPath, val);
     }
 
     watch(e, handler) {

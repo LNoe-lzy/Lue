@@ -1,6 +1,7 @@
 import Event from './Event';
 import Observer from './Observer';
 import Directive from './Directive';
+import Binding from './Binding';
 
 export default class Lue {
     constructor(options) {
@@ -12,11 +13,14 @@ export default class Lue {
         this.$el = document.querySelector(options.el);
         this.$data = options.data;
 
-        this._directives = [];
-
         // 事件监听
         this.$observer = new Observer(this.$data);
-        this.$observer.eventHub.on('set', this._updateDirective.bind(this));
+
+
+        // 初始化binding
+        this._initBinding();
+
+        this._directives = [];
 
         // 挂载
         this._mount();
@@ -72,19 +76,48 @@ export default class Lue {
     }
 
     _bindDirective(type, el, expression) {
-        // 讲指令操作存入_directives数组
+        // 将指令操作存入_directives数组
         this._directives.push(
             new Directive(type, el, this, expression)
         );
     }
 
-    _updateDirective() {
+    createBinding(path) {
+        let rb = this._rootBinding;
+        let pathArr = path.split('.');
+
+        for (let i = 0; i < pathArr; i++) {
+            let key = pathArr[i];
+            rb = rb[key] = rb._addChild(key);
+        }
+
+        return rb;
+    }
+
+    _initBinding() {
+        this._rootBinding = new Binding();
+
+        // 在数据冒泡顶层注册监听事件
+        this.$observer.eventHub.on('set', this._updateBinding.bind(this));
+
+    }
+
+    /**
+     * 当数据改变的时候，找到其对应的watcher然后执行其callback
+     * 
+     * @memberOf Lue
+     */
+    _updateBinding() {
         let path = arguments[1];
-        this._directives.forEach((directive) => {
-            if (directive.expression !== path) {
-                return;
-            }
-            directive.update();
+        console.log(path);
+        let pathArr = path.split('.');
+        let rb = this._rootBinding;
+        pathArr.forEach((key) => {
+            rb = rb[key];
+        });
+        let subs = rb._subs;
+        subs.forEach((watcher) => {
+            watcher.callback.call(watcher);
         });
     }
 }

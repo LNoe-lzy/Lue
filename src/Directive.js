@@ -1,3 +1,5 @@
+import Watcher from './Watcher';
+
 export default class Directive {
     constructor(type, el, vm, expression) {
         this.type = type;
@@ -6,22 +8,38 @@ export default class Directive {
         this.expression = expression;
         this.attr = 'nodeValue';
 
+        this._bind();
+
+        this.update();
+    }
+
+    _bind() {
+        if (!this.expression) {
+            return;
+        }
+
+        this._watcher = new Watcher(
+            this.vm,
+            this.expression,
+            this._update,
+            this,
+        );
+
+        this.update();
+
+    }
+
+    _update() {
         this.update();
     }
 
     update() {
         // 深度遍历expression, 获取所需要的属性值
-        let data = this.vm.$data;
-        let expression = this.expression;
-        let exps = expression.split('.');
-        let currentAttr;
-        for (let i = 0; i < exps.length; i++) {
-            if (data[exps[i]]) {
-                currentAttr = data[exps[i]];
-            } else {
-                currentAttr = currentAttr[exps[i]];
-            }
-        }
-        this.el[this.attr] = currentAttr;
+        let exps = this.expression.split('.');
+        let val = this.vm.$data;
+        exps.forEach((exp) => {
+            val = val[exp];
+        })
+        this.el[this.attr] = val;
     }
 }

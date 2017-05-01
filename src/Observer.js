@@ -9,20 +9,18 @@ export default class Observer {
 
     _walk(data) {
         let val;
-        for (let key in data) {
-            if (data.hasOwnProperty(key)) {
-                val = data[key];
-                if (typeof val === 'object') {
-                    // 如果是对象，则递归创建新的observer对象，并保存parent对象
-                    let obj = new Observer(val);
-                    obj.parent = {
-                        key,
-                        obj: this
-                    };
-                }
-                this._convert(key, val);
+        Object.keys(data).forEach((key) => {
+            val = data[key];
+            if (typeof val === 'object') {
+                // 如果是对象，则递归创建新的observer对象，并保存parent对象
+                let obj = new Observer(val);
+                obj.parent = {
+                    key,
+                    obj: this
+                };
             }
-        }
+            this._convert(key, val);
+        })
     }
 
     _convert(key, val) {

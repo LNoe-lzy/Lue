@@ -15,13 +15,9 @@ let app = new Lue({
     }
 });
 
-console.log(app);
-
-
-app.$watch('user.name', function () {
-    console.log('watcher监测到了user.name');
-})
 
 app.$data.user.name = 'lzyssds';
 
 window.app = app;
+
+console.log(window.app);

@@ -45,10 +45,10 @@ export default class Watcher {
     initDeps(path) {
         this.addDep(path);
         Observer.emitGet = true;
-        this.vm.__activeWatcher = this;
+        this.vm._activeWatcher = this;
         this.value = this.getter.call(this.vm, this.vm.$data);
         Observer.emitGet = false;
-        this.vm.__activeWatcher = null;
+        this.vm._activeWatcher = null;
     }
 
     /**
@@ -100,6 +100,6 @@ export default class Watcher {
         key = path[path.length - 1];
         pathString += `.${key}`;
         boby += `) return ${pathString}`;
-        return new Function('o', boby); // eslint-disable-line
+        return new Function('o', boby);
     }
 }

@@ -12,10 +12,11 @@ export default class Lue {
         this._init(options);
     }
     _init(options) {
-        // 初始化元数据
+        // 初始化原始数据
         this.$options = options;
         this.$data = options.data || {};
 
+        // 存储遍历DOM过程中生成的当前的Watcher
         this._activeWatcher = null;
 
         // 绑定指令到$options
@@ -25,6 +26,9 @@ export default class Lue {
 
         // 事件监听
         this.$observer = new Observer(this.$data);
+
+        // 初始化计算属性
+        this._initComputed();
 
         // 初始化binding
         this._initBinding();
@@ -38,9 +42,6 @@ export default class Lue {
     }
     _mount(el) {
         this._initElement(el);
-
-        this._initComputed();
-
         this._compile();
     }
 
@@ -153,6 +154,9 @@ export default class Lue {
      * @memberOf Lue
      */
     _parse(text) {
+        if (text.trim() === '') {
+            return false;
+        }
         let tokens = [];
         let pattern = /\{\{(.+?)\}\}/g;
         let match, index, value;
@@ -197,7 +201,7 @@ export default class Lue {
         if (!computed) {
             return;
         }
-        for (let key in computed) {
+        Object.keys(computed).forEach((key) => {
             let def = computed[key];
             if (typeof def === 'function') {
                 // 将def设为对应的元素的getter
@@ -209,7 +213,7 @@ export default class Lue {
                 // 绑定到data
                 Object.defineProperty(this.$data, key, def);
             }
-        }
+        });
     }
 
     _bindDirective(type, node, value) {
@@ -232,13 +236,21 @@ export default class Lue {
         // 在数据冒泡顶层注册监听事件
         this.$observer.eventHub.on('set', this._updateBinding.bind(this));
 
-        // 获数组顶层取依赖监听 
+        // 获数据顶层取依赖监听 
         this.$observer.eventHub.on('get', this._collectDep.bind(this));
 
     }
-    _collectDep(event, path) {
+
+    /**
+     * 收集computed所需要的data
+     * 
+     * @param {String} event 
+     * @param {String} path 
+     * 
+     * @memberOf Lue
+     */
+    _collectDep(path) {
         let watcher = this._activeWatcher;
-        console.log(watcher);
         if (watcher) {
             watcher.addDep(path);
         }
@@ -284,7 +296,7 @@ export default class Lue {
         }
         return rb;
     }
-    
+
     /**
      * 创建Binding
      * 
@@ -293,7 +305,7 @@ export default class Lue {
      * 
      * @memberOf Lue
      */
-     _createBinding(path) {
+    _createBinding(path) {
         let rb = this._rootBinding;
         let pathArr = path.split('.');
         for (let i = 0; i < pathArr.length; i++) {

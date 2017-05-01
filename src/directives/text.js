@@ -6,6 +6,6 @@ export default {
             val = val[prop];
         });
         this.el[this.attr] = val;
-        console.log(`更新了dom: ${this.expression}`);
+        // console.log(`更新了dom: ${this.expression}`);
     }
 }

@@ -1,3 +1,11 @@
+import Batcher from './Batcher';
+
+// watcher 标识
+let uid = 0;
+
+let batcher = new Batcher();
+
+
 /**
  * 当指令对应的数据发生变化的时候，执行更新DOM的update函数
  * 当$watch监听到数据发生改变的时候，执行回调函数
@@ -16,6 +24,7 @@ export default class Watcher {
      * @memberOf Watcher
      */
     constructor(vm, expression, callback, context) {
+        this.id = ++uid;
         this.vm = vm;
         this.expression = expression;
         this.callback = callback;
@@ -35,6 +44,7 @@ export default class Watcher {
      * @memberOf Watcher
      */
     update() {
-        this.callback.call(this.context, arguments);
+        // this.callback.call(this.context, arguments);
+        batcher.push(this);
     }
 }

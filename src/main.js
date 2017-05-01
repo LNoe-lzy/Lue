@@ -17,4 +17,6 @@ app.$watch('user.name', function () {
     console.log('watcher监测到了user.name');
 })
 
-app.$data.user.name = 'lzys';
+app.$data.user.name = 'lzyssds';
+
+window.app = app;

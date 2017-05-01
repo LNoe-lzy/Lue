@@ -16,6 +16,8 @@ export default class Lue {
         this.$options = options;
         this.$data = options.data || {};
 
+        this._activeWatcher = null;
+
         // 绑定指令到$options
         Object.assign(this.$options, {
             directives
@@ -35,7 +37,10 @@ export default class Lue {
         this.$el = document.querySelector(options.el);
     }
     _mount(el) {
-        this._initElement(el)
+        this._initElement(el);
+
+        this._initComputed();
+
         this._compile();
     }
 
@@ -181,6 +186,32 @@ export default class Lue {
         return tokens;
     }
 
+    /**
+     * 初始化computed属性
+     * 
+     * 
+     * @memberOf Lue
+     */
+    _initComputed() {
+        let computed = this.$options.computed;
+        if (!computed) {
+            return;
+        }
+        for (let key in computed) {
+            let def = computed[key];
+            if (typeof def === 'function') {
+                // 将def设为对应的元素的getter
+                def = {
+                    get: def
+                };
+                def.enumerable = true;
+                def.configurable = true;
+                // 绑定到data
+                Object.defineProperty(this.$data, key, def);
+            }
+        }
+    }
+
     _bindDirective(type, node, value) {
         let descriptors = [];
         descriptors.push({
@@ -195,23 +226,22 @@ export default class Lue {
         });
     }
 
-    _createBinding(path) {
-        let rb = this._rootBinding;
-        let pathArr = path.split('.');
-        for (let i = 0; i < pathArr.length; i++) {
-            let key = pathArr[i];
-            rb = rb[key] = rb._addChild(key);
-        }
-
-        return rb;
-    }
-
     _initBinding() {
         this._rootBinding = new Binding();
 
         // 在数据冒泡顶层注册监听事件
         this.$observer.eventHub.on('set', this._updateBinding.bind(this));
 
+        // 获数组顶层取依赖监听 
+        this.$observer.eventHub.on('get', this._collectDep.bind(this));
+
+    }
+    _collectDep(event, path) {
+        let watcher = this._activeWatcher;
+        console.log(watcher);
+        if (watcher) {
+            watcher.addDep(path);
+        }
     }
 
     /**
@@ -233,6 +263,45 @@ export default class Lue {
         subs.forEach((watcher) => {
             watcher.callback.call(watcher);
         });
+    }
+
+    /**
+     * 根据path获取Binding
+     * 
+     * @param {any} path 
+     * 
+     * @memberOf Lue
+     */
+    _getBinding(path) {
+        let rb = this._rootBinding;
+        let pathArr = path.split('.');
+        for (let i = 0; i < pathArr.length; i++) {
+            let key = pathArr[i];
+            rb = rb[key];
+            if (!rb) {
+                return false;
+            }
+        }
+        return rb;
+    }
+    
+    /**
+     * 创建Binding
+     * 
+     * @param {any} path 
+     * @returns 
+     * 
+     * @memberOf Lue
+     */
+     _createBinding(path) {
+        let rb = this._rootBinding;
+        let pathArr = path.split('.');
+        for (let i = 0; i < pathArr.length; i++) {
+            let key = pathArr[i];
+            rb = rb[key] = rb._addChild(key);
+        }
+
+        return rb;
     }
 
     $watch(expression, callback) {

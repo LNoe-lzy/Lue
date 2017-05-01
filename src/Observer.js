@@ -6,6 +6,7 @@ export default class Observer {
         this.eventHub = new Event();
         this._walk(data);
     }
+
     _walk(data) {
         let val;
         for (let key in data) {
@@ -30,6 +31,10 @@ export default class Observer {
             enumerable: true,
             configurable: true,
             get() {
+                // 监听computed或其他属性的访问
+                if (Observer.emitGet) {
+                    that._notify('get', key);
+                }
                 return val;
             },
             set(newval) {
@@ -38,7 +43,6 @@ export default class Observer {
                 }
                 val = newval;
                 that._notify('set', key, newval);
-                that._notify(`set:${key}`, key, newval);
                 if (typeof newval === 'object') {
                     new Observer(val);
                 }
@@ -65,3 +69,5 @@ export default class Observer {
         this.eventHub.on(e, handler);
     }
 }
+
+Observer.emitGet = false;

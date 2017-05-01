@@ -1,4 +1,5 @@
 import Batcher from './Batcher';
+import Observer from './Observer';
 
 // watcher 标识
 let uid = 0;
@@ -29,11 +30,42 @@ export default class Watcher {
         this.expression = expression;
         this.callback = callback;
         this.context = context || vm;
-        this.addDep(expression);
+        this.deps = Object.create(null);
+        this.getter = this.compileGetter(expression);
+        this.initDeps(expression);
     }
 
+    /**
+     * 初始化依赖
+     * 
+     * @param {any} path 
+     * 
+     * @memberOf Watcher
+     */
+    initDeps(path) {
+        this.addDep(path);
+        Observer.emitGet = true;
+        this.vm.__activeWatcher = this;
+        this.value = this.getter.call(this.vm, this.vm.$data);
+        Observer.emitGet = false;
+        this.vm.__activeWatcher = null;
+    }
+
+    /**
+     * 根据路径获取binding对象
+     * 
+     * @param {any} path 
+     * 
+     * @memberOf Watcher
+     */
     addDep(path) {
-        let binding = this.vm._createBinding(path);
+        let vm = this.vm;
+        let deps = this.deps;
+        if (deps[path]) {
+            return;
+        }
+        deps[path] = true;
+        let binding = vm._getBinding(path) || vm._createBinding(path);
         binding._addSub(this);
     }
 
@@ -46,5 +78,28 @@ export default class Watcher {
     update() {
         // this.callback.call(this.context, arguments);
         batcher.push(this);
+    }
+
+    /**
+     * user.age
+     * 
+     * @param {String} path 
+     * 
+     * @memberOf Watcher
+     */
+    compileGetter(path) {
+        path = path.split('.');
+        let boby = 'if (o != null';
+        let pathString = 'o';
+        let key;
+        for (let i = 0; i < path.length - 1; i++) {
+            key = path[i];
+            pathString += `.${key}`;
+            boby += ` && ${pathString} != null`;
+        }
+        key = path[path.length - 1];
+        pathString += `.${key}`;
+        boby += `) return ${pathString}`;
+        return new Function('o', boby); // eslint-disable-line
     }
 }

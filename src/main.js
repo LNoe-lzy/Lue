@@ -7,6 +7,11 @@ let app = new Lue({
             name: 'lzy',
             age: 21
         }
+    },
+    computed: {
+        info () {
+            return `name: ${this.user.name}, age: ${this.user.age}`;
+        }
     }
 });
 

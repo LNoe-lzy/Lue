@@ -2,6 +2,7 @@ import Event from './Event';
 import Observer from './Observer';
 import Directive from './Directive';
 import Binding from './Binding';
+import Watcher from './Watcher';
 
 // 引入指令库
 import directives from './directives';
@@ -232,5 +233,9 @@ export default class Lue {
         subs.forEach((watcher) => {
             watcher.callback.call(watcher);
         });
+    }
+
+    $watch(expression, callback) {
+        new Watcher(this, expression, callback, this);
     }
 }

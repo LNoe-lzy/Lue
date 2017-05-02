@@ -1,6 +1,8 @@
 import text from './text';
+import lif from './if';
 
 export default {
-    text
+    text,
+    if: lif
 }
 

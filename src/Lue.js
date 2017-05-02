@@ -4,17 +4,37 @@ import Directive from './Directive';
 import Binding from './Binding';
 import Watcher from './Watcher';
 
+import _ from './util/index';
+
+import config from './config';
+
+
+// 引入api
+import domAPI from './api/dom';
+
 // 引入指令库
 import directives from './directives';
+
+
+const priorityDirs = [
+    'if'
+];
 
 export default class Lue {
     constructor(options) {
         this._init(options);
+
     }
     _init(options) {
+
         // 初始化原始数据
         this.$options = options;
         this.$data = options.data || {};
+
+
+        // 挂载api
+        this.$before = domAPI.$before;
+        this.$remove = domAPI.$remove;
 
         // 存储遍历DOM过程中生成的当前的Watcher
         this._activeWatcher = null;
@@ -38,7 +58,7 @@ export default class Lue {
         // 挂载
         this._mount(options.el);
 
-        this.$el = document.querySelector(options.el);
+        // this.$el = document.querySelector(options.el);
     }
     _mount(el) {
         this._initElement(el);
@@ -54,15 +74,15 @@ export default class Lue {
      * @memberOf Lue
      */
     _initElement(el) {
-        if (typeof el !== 'string') {
-            return;
+        if (typeof el === 'string') {
+            let sel = el;
+            this.$el = el = document.querySelector(el);
+            if (!el) {
+                console.warn(`can not fount element: ${sel}`);
+            }
+        } else {
+            this.$el = el;
         }
-        let sel = el;
-        this.$el = el = document.querySelector(el);
-        if (!el) {
-            console.warn(`can not fount element: ${sel}`);
-        }
-
     }
 
     /**
@@ -104,11 +124,46 @@ export default class Lue {
      * @memberOf Lue
      */
     _compileElement(node) {
-        if (node.hasChildNodes) {
+        let hasAttributes = node.hasAttributes();
+
+        // 如果含有show指令跳出节点渲染
+        if (hasAttributes && this._checkPriorityDirs(node)) {
+            return;
+        }
+        if (node.hasChildNodes()) {
             Array.from(node.childNodes).forEach((child) => {
                 this._compileNode(child);
             });
         }
+    }
+
+    /**
+     * 获取指令值并绑定Directive
+     * 
+     * @param {Object} node 
+     * 
+     * @memberOf Lue
+     */
+    _checkPriorityDirs(node) {
+        priorityDirs.forEach((dir) => {
+            let value = _.dom.attr(node, dir);
+
+            // 监测到l-指令后动态植入bind函数
+            let bind = function () {
+                let el = this.el;
+                this.ref = document.createComment(`${config.prefix}if`);
+                // 在原来节点之后插入占位置，及注释节点
+                _.dom.after(this.ref, el);
+                // 删除原来节点
+                _.dom.remove(el);
+
+                this.inserted = false;
+            }
+            if (value) {
+                this._bindDirective(dir, node, value, bind);
+                return;
+            }
+        })
     }
 
     /**
@@ -216,7 +271,7 @@ export default class Lue {
         });
     }
 
-    _bindDirective(type, node, value) {
+    _bindDirective(type, node, value, bind) {
         let descriptors = [];
         descriptors.push({
             expression: value
@@ -225,7 +280,7 @@ export default class Lue {
         let dirs = this._directives;
         descriptors.forEach((descriptor) => {
             dirs.push(
-                new Directive(type, node, this, descriptor)
+                new Directive(type, node, this, descriptor, bind)
             )
         });
     }

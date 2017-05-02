@@ -6,7 +6,8 @@ let app = new Lue({
         user: {
             name: 'lzy',
             age: 21
-        }
+        },
+        show: true
     },
     computed: {
         info () {
@@ -16,7 +17,7 @@ let app = new Lue({
 });
 
 
-app.$data.user.name = 'lzyssds';
+// app.$data.user.name = 'lzyssds';
 
 window.app = app;
 

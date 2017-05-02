@@ -44,11 +44,7 @@ export default class Watcher {
      */
     initDeps(path) {
         this.addDep(path);
-        Observer.emitGet = true;
-        this.vm._activeWatcher = this;
-        this.value = this.getter.call(this.vm, this.vm.$data);
-        Observer.emitGet = false;
-        this.vm._activeWatcher = null;
+        this.value = this.get();
     }
 
     /**
@@ -69,6 +65,25 @@ export default class Watcher {
         binding._addSub(this);
     }
 
+
+    boforeGet() {
+        Observer.emitGet = true;
+        this.vm._activeWatcher = this;
+
+    }
+
+    get() {
+        this.boforeGet();
+        let value = this.getter.call(this.vm, this.vm.$data);
+        this.afterGet();
+        return value;
+    }
+
+    afterGet() {
+        Observer.emitGet = false;
+        this.vm._activeWatcher = null;
+    }
+
     /**
      * 当数据改变的时候触发的是notify
      * 当数据冒泡到顶层的时候触发的是updateBinding
@@ -78,6 +93,13 @@ export default class Watcher {
     update() {
         // this.callback.call(this.context, arguments);
         batcher.push(this);
+    }
+
+    run() {
+        let value = this.get();
+        let oldValue = this.value;
+        this.value = value;
+        this.callback.call(this.context, value, oldValue);
     }
 
     /**

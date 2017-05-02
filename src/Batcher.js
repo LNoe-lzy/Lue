@@ -38,7 +38,8 @@ export default class Batcher {
 
     flush() {
         this.queue.forEach((job) => {
-            job.callback.call(job.context);
+            // job.callback.call(job.context);
+            job.run();
         });
 
         this.reset();

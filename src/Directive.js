@@ -1,12 +1,17 @@
 import Watcher from './Watcher';
+import config from './config';
+import _ from './util';
+import Lue from './Lue';
 
 export default class Directive {
-    constructor(type, el, vm, descriptor) {
+    constructor(type, el, vm, descriptor, bind) {
         this.type = type;
         this.el = el;
         this.vm = vm;
         this.expression = descriptor.expression;
         this.attr = 'nodeValue';
+
+        this.bind = bind;
 
         this._initDef();
 
@@ -30,6 +35,11 @@ export default class Directive {
             return;
         }
 
+        // console.log(this.bind);
+
+        // 执行初始化
+        this.bind && this.bind();
+
         this._watcher = new Watcher(
             this.vm,
             this.expression,
@@ -37,11 +47,11 @@ export default class Directive {
             this,
         );
 
-        this.update();
+        this.update(this._watcher.value);
 
     }
 
-    _update() {
-        this.update();
+    _update(value, oldValue) {
+        this.update(value, oldValue);
     }
 }

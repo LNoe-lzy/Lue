@@ -29,8 +29,16 @@ export default class Lue {
 
         // 初始化原始数据
         this.$options = options;
-        this.$data = options.data || {};
+        this.$parent = options.parent;
+        this.$children = [];
 
+        // 判断是顶层lue实例还是子lue实例
+        if (this.$parent) {
+            this.$parent.$children.push(this);
+            this.$data = options.parent.$data;
+        } else {
+            this.$data = options.data || {};
+        }
 
         // 挂载api
         this.$before = domAPI.$before;
@@ -45,7 +53,11 @@ export default class Lue {
         });
 
         // 事件监听
-        this.$observer = new Observer(this.$data);
+        if (this.$parent) {
+            this.$observer = this.$parent.$observer;
+        } else {
+            this.$observer = new Observer(this.$data);
+        }
 
         // 初始化计算属性
         this._initComputed();
@@ -325,6 +337,10 @@ export default class Lue {
         pathArr.forEach((key) => {
             rb = rb[key];
         });
+
+        if (!rb) {
+            return;
+        }
 
         let subs = rb._subs;
         subs.forEach((watcher) => {

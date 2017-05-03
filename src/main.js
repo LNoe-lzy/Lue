@@ -17,7 +17,7 @@ let app = new Lue({
 });
 
 
-// app.$data.user.name = 'lzyssds';
+app.$data.user.name = 'lzyssds';
 
 window.app = app;
 

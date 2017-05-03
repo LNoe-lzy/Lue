@@ -1,8 +1,11 @@
 import Event from './Event';
 
+let uid = 0;
+
 export default class Observer {
     constructor(data) {
         this.data = data;
+        this.id = ++uid;
         this.eventHub = new Event();
         this._walk(data);
     }

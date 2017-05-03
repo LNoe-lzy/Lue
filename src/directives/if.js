@@ -15,7 +15,8 @@ export default {
             if (!this.inserted) {
                 if (!this.childVM) {
                     this.childVM = new Lue({
-                        el: this.el
+                        el: this.el,
+                        parent: this.vm
                     });
                 }
 
@@ -41,16 +42,5 @@ export default {
         _.dom.remove(el);
 
         this.inserted = false;
-    },
-
-
-    /**
-     * 将l-if指令下的节点集合当作是一个子Lue实例来对待
-     * 
-     */
-    build() {
-        this.childVM = new Lue({
-            el: this.el
-        });
     }
 }
